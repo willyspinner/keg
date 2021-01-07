@@ -20,6 +20,7 @@
 */
 
 import * as React from 'react';
+import Modal from 'react-modal'
 
 import  GraphView from 'react-digraph'
 import GraphConfig, {
@@ -165,6 +166,7 @@ const sample = {
   ],
 };
 
+// TODO: do we even need this?
 function generateSample(totalNodes) {
   const generatedSample = {
     edges: [],
@@ -209,11 +211,22 @@ function generateSample(totalNodes) {
 
 
 
+const modalStyles = {
+  content : {
+      top                   : '50%',
+      left                  : '50%',
+      right                 : 'auto',
+      bottom                : 'auto',
+      marginRight           : '-50%',
+      transform             : 'translate(-50%, -50%)'
+    }
+};
+
 class Graph extends React.Component {
 
   constructor(props) {
     super(props);
-    const graphUsed = JSON.parse(localStorage.graph) || sample
+    const graphUsed = JSON.parse(localStorage.graph || 'null') || sample
     console.log("GRAPH USED", graphUsed)
 
     this.state = {
@@ -337,27 +350,44 @@ class Graph extends React.Component {
   // Updates the graph with a new node
   onCreateNode = (x: number, y: number, mouseEvt) => {
     console.log("ON CREATE NODE CALLEd", x, y, mouseEvt)
-    const graph = this.state.graph;
+    this.setState({
+      nodeModalIsOpen: true,
+      newNode: {x, y, description: ''}
+    })
 
-    // This is just an example - any sort of logic
-    // could be used here to determine node type
-    // There is also support for subtypes. (see 'sample' above)
-    // The subtype geometry will underlay the 'type' geometry for a node
+  };
+
+  onSubmitCreateNode = (e) => {
+    e.preventDefault()
+    console.log(e)
     const type = Math.random() < 0.25 ? SPECIAL_TYPE : EMPTY_TYPE;
+    const { x, y, description } = this.state.newNode || {};
+    const graph = this.state.graph;
+    if (!x || ! y || !description) {
+      console.log("NEWNODE is bad", this.state.newNode)
+      return
 
-    // TODO: handle stuff here. Maybe add modal to create what kind of graph you want to do.
-    const viewNode = {
+    }
+    const node= {
       id: Date.now(),
-      title: 'TINGBBINg',
+      title: this.state.newNode.description,
       type,
       x,
       y,
     };
 
-    graph.nodes = [...graph.nodes, viewNode];
-    this.setState({ graph });
+    graph.nodes = [...graph.nodes, node];
+    this.setState({ graph, nodeModalIsOpen: false });
     this.saveLocalStorage()
-  };
+  }
+  onNewNodeChange = (newMappings) => {
+    this.setState((prevState) => ({
+      newNode: {
+        ...prevState.newNode,
+        ...newMappings
+      }
+    }))
+  }
 
   // Deletes a node from the graph
   onDeleteNode = (viewNode: INode, nodeId: string, nodeArr: INode[]) => {
@@ -532,6 +562,18 @@ class Graph extends React.Component {
             </select>
           </div>
         </div>
+        <Modal
+          style={modalStyles}
+          isOpen={this.state.nodeModalIsOpen}
+        >
+          <h2> Add a new node </h2>
+          <form onSubmit={this.onSubmitCreateNode}>
+            <label>
+              Description: <input type="textarea" value={this.state.newNode ? this.state.newNode.description: ''} onChange={(e)=> this.onNewNodeChange({description: e.target.value})} />
+            </label>
+            <input type="submit" value="Submit"/>
+          </form>
+        </Modal>
         <div id="graph" style={{ width: '80%', height: /*'calc(100% - 87px)'*/ '37rem'}}>
           <GraphView
             ref={el => (this.GraphView = el)}

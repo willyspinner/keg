@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Tooltip, Input, Modal, Typography } from 'antd';
+import { Tooltip, Input, Modal, Typography } from 'antd';
 import { CheckOutlined, CloseOutlined, PlusCircleOutlined, DeleteOutlined } from '@ant-design/icons'
 const { TextArea } = Input;
 const { Title } = Typography;
@@ -72,7 +72,7 @@ export default class ExpandableFormModal extends React.Component {
         onCancel={this.props.onCancel}
       >
         {this.state.fields && Object.keys(this.state.fields).map((key) => (
-          <div style= {{ marginTop: '0.5em' }}>
+          <div key={key} style= {{ marginTop: '0.5em' }}>
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
               <Title level={5}> {key} </Title>
               { key !== 'title' &&

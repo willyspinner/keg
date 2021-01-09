@@ -20,7 +20,7 @@
 */
 
 import * as React from 'react';
-import { Divider } from 'antd';
+import { Divider, Typography } from 'antd';
 import EditableInfoCard from './EditableInfoCard';
 import ExpandableFormModal from './ExpandableFormModal';
 
@@ -39,6 +39,8 @@ import GraphConfig, {
   SKINNY_TYPE,
 } from './graph-config'; // Configures node/edge types
 
+
+const { Title } = Typography;
 
 // NOTE: Edges must have 'source' & 'target' attributes
 // In a more realistic use case, the graph would probably originate
@@ -469,6 +471,21 @@ class Graph extends React.Component {
    * Render
    */
 
+   onEditCardContents = (editedFields) => {
+   console.log("EDDD", editedFields)
+     this.setState(prevState => ({
+       selected: {
+         ...prevState.selected,
+         fields: {
+           ...prevState.selected.fields,
+           ...editedFields
+         }
+       }
+     }), () => {
+       this.onUpdateNode(this.state.selected)
+     })
+   }
+
   render() {
     const { nodes, edges } = this.state.graph;
     const selected = this.state.selected;
@@ -504,6 +521,7 @@ class Graph extends React.Component {
               onCreateNode={this.onCreateNode}
               onUpdateNode={this.onUpdateNode}
               onDeleteNode={this.onDeleteNode}
+              disableBackspace={true} 
               onSelectEdge={this.onSelectEdge}
               onCreateEdge={this.onCreateEdge}
               onSwapEdge={this.onSwapEdge}
@@ -519,7 +537,7 @@ class Graph extends React.Component {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div>
-              <p> Controls: </p>
+              <Title level={4}> Controls: </Title>
               <ul>
                 <li> Create node: hold <code>shift</code> and left click at the location of your new node.</li>
                 <li> Create edge: hold <code>shift</code> and drag from the originating node to the destination node to create an edge</li>
@@ -533,6 +551,7 @@ class Graph extends React.Component {
                 <EditableInfoCard
                   title={'Selected Node'}
                   contents={selected.fields}
+                  onEditContents={this.onEditCardContents}
                 />
               )}
             </div>

@@ -36,6 +36,10 @@ export default class ExpandableFormModal extends React.Component {
       alert("please put a field name")
       return
     }
+    if(this.state.fields[this.state.newFieldName]) {
+      alert("field exists already.")
+      return
+    }
     this.setState(prevState => ({
       fields: { ...prevState.fields, [prevState.newFieldName]: '' },
       isCreatingNewField: false,

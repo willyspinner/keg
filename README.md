@@ -2,11 +2,21 @@
 
 cool stuff ay
 
-# Ideas for features
+# Feature backlog
 
-- [x] use antd design
-- [x] add an accompanying section to the right of the graph that shows selected node's contents in detail.
-- [x] When creating a new node, add an option to create more attributes if needed.
-- [x] make accompanying section editable
-- [ ] create feature to delete and add attributes from accompanying section
-- [ ] add 'projects' section (dropdown in title) for multiple projects support
+### TODO
+-  create feature to delete and add attributes from accompanying section (not high priority though)
+- make edges explorable.
+- create edge explorer (shows cards of adjacent nodes by edge predicate) - when clicked on, you can explore in graph.
+
+### Doing
+-  add multiple projects support
+
+
+### Done
+
+-  use antd design
+-  add an accompanying section to the right of the graph that shows selected node's contents in detail.
+-  When creating a new node, add an option to create more attributes if needed.
+-  make accompanying section editable
+

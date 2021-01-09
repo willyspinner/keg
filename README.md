@@ -2,7 +2,16 @@
 
 cool stuff ay
 
-# Feature backlog
+
+# Tasks
+
+## On the roadmap
+- setting up a basic backend server (with user accounts)
+
+- sharing & collaboration using OT (Operational Transformation) and websockets (this is very ambitious)!
+
+## Sprint backlog 
+
 
 ### TODO
 -  create feature to delete and add attributes from accompanying section (not high priority though)

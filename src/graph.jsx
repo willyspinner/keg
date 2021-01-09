@@ -20,7 +20,9 @@
 */
 
 import * as React from 'react';
-import Modal from 'react-modal'
+import { Divider } from 'antd';
+import EditableInfoCard from './EditableInfoCard';
+import ExpandableFormModal from './ExpandableFormModal';
 
 import  GraphView from 'react-digraph'
 import GraphConfig, {
@@ -167,60 +169,8 @@ const sample = {
 };
 
 // TODO: do we even need this?
-function generateSample(totalNodes) {
-  const generatedSample = {
-    edges: [],
-    nodes: [],
-  };
-  let y = 0;
-  let x = 0;
-
-  const numNodes = totalNodes ? totalNodes : 0;
-
-  // generate large array of nodes
-  // These loops are fast enough. 1000 nodes = .45ms + .34ms
-  // 2000 nodes = .86ms + .68ms
-  // implying a linear relationship with number of nodes.
-  for (let i = 1; i <= numNodes; i++) {
-    if (i % 20 === 0) {
-      y++;
-      x = 0;
-    } else {
-      x++;
-    }
-
-    generatedSample.nodes.push({
-      id: `a${i}`,
-      title: `Node ${i}`,
-      type: nodeTypes[Math.floor(nodeTypes.length * Math.random())],
-      x: 0 + 200 * x,
-      y: 0 + 200 * y,
-    });
-  }
-  // link each node to another node
-  for (let i = 1; i < numNodes; i++) {
-    generatedSample.edges.push({
-      source: `a${i}`,
-      target: `a${i + 1}`,
-      type: edgeTypes[Math.floor(edgeTypes.length * Math.random())],
-    });
-  }
-
-  return generatedSample;
-}
 
 
-
-const modalStyles = {
-  content : {
-      top                   : '50%',
-      left                  : '50%',
-      right                 : 'auto',
-      bottom                : 'auto',
-      marginRight           : '-50%',
-      transform             : 'translate(-50%, -50%)'
-    }
-};
 
 class Graph extends React.Component {
 
@@ -266,14 +216,6 @@ class Graph extends React.Component {
     return this.state.graph.nodes[i];
   }
 
-  makeItLarge = () => {
-    const graph = this.state.graph;
-    const generatedSample = generateSample(this.state.totalNodes);
-
-    graph.nodes = generatedSample.nodes;
-    graph.edges = generatedSample.edges;
-    this.setState(this.state);
-  };
 
   addStartNode = () => {
     const graph = this.state.graph;
@@ -306,15 +248,6 @@ class Graph extends React.Component {
     this.setState({
       graph,
     });
-  };
-
-  handleChange = (event: any) => {
-    this.setState(
-      {
-        totalNodes: parseInt(event.target.value || '0', 10),
-      },
-      this.makeItLarge
-    );
   };
 
   /*
@@ -352,25 +285,26 @@ class Graph extends React.Component {
     console.log("ON CREATE NODE CALLEd", x, y, mouseEvt)
     this.setState({
       nodeModalIsOpen: true,
-      newNode: {x, y, description: ''}
+      newNode: {x, y, name: ''}
     })
 
   };
 
-  onSubmitCreateNode = (e) => {
-    e.preventDefault()
-    console.log(e)
-    const type = Math.random() < 0.25 ? SPECIAL_TYPE : EMPTY_TYPE;
-    const { x, y, description } = this.state.newNode || {};
+  onSubmitCreateNode = (fields) => {
+    console.log("SUBMITTED:", fields)
+    //const type = Math.random() < 0.25 ? SPECIAL_TYPE : EMPTY_TYPE;
+    const type = EMPTY_TYPE;
+    const { x, y } = this.state.newNode || {};
     const graph = this.state.graph;
-    if (!x || ! y || !description) {
+    if (!x || ! y)  {
       console.log("NEWNODE is bad", this.state.newNode)
       return
 
     }
-    const node= {
+    const node = {
       id: Date.now(),
-      title: this.state.newNode.description,
+      title: fields.title,
+      fields, 
       type,
       x,
       y,
@@ -380,6 +314,7 @@ class Graph extends React.Component {
     this.setState({ graph, nodeModalIsOpen: false });
     this.saveLocalStorage()
   }
+
   onNewNodeChange = (newMappings) => {
     this.setState((prevState) => ({
       newNode: {
@@ -393,7 +328,6 @@ class Graph extends React.Component {
   onDeleteNode = (viewNode: INode, nodeId: string, nodeArr: INode[]) => {
     const graph = this.state.graph;
     // Delete any connected edges
-    console.log("DELETING NODE", viewNode, nodeId) 
     const newEdges = graph.edges.filter((edge, i) => {
       return (
         edge.source !== viewNode[NODE_KEY] && edge.target !== viewNode[NODE_KEY]
@@ -412,15 +346,18 @@ class Graph extends React.Component {
     const graph = this.state.graph;
     // This is just an example - any sort of logic
     // could be used here to determine edge type
+    /*
     const type =
       sourceViewNode.type === SPECIAL_TYPE
         ? SPECIAL_EDGE_TYPE
         : EMPTY_EDGE_TYPE;
 
+    */
     const viewEdge = {
       source: sourceViewNode[NODE_KEY],
       target: targetViewNode[NODE_KEY],
-      type,
+//type: EMPTY_EDGE_TYPE,
+      handleText: 'Infl'
     };
 
     // Only add the edge when the source node is not the same as the target
@@ -520,6 +457,14 @@ class Graph extends React.Component {
     }
   };
 
+  renderNodeText = (data, id, isSelected) => {
+    // TODO: customise node text here
+    // TODO: this is buggy.
+    console.log("DATA", data, "ID", id)
+    return (
+      <text x='0' y='0'> {data.title} </text>
+    )
+  }
   /*
    * Render
    */
@@ -528,75 +473,70 @@ class Graph extends React.Component {
     const { nodes, edges } = this.state.graph;
     const selected = this.state.selected;
     const { NodeTypes, NodeSubtypes, EdgeTypes } = GraphConfig;
+    console.log("SELECTED:", selected)
+    /*
+    * TODO: old shit
+          <label>
+            Name: <input type="textarea" value={this.state.newNode ? this.state.newNode.name: ''} onChange={(e)=> this.onNewNodeChange({name: e.target.value})} />
+          </label>
+     */
 
     return (
       <>
-        <div className="graph-header">
-          <button onClick={this.addStartNode}>Add Node</button>
-          <button onClick={this.deleteStartNode}>Delete Node</button>
-          <input
-            className="total-nodes"
-            type="number"
-            onBlur={this.handleChange}
-            placeholder={this.state.totalNodes.toString()}
-          />
-          <div className="layout-engine">
-            <span>Layout Engine:</span>
-            <select
-              name="layout-engine-type"
-              onChange={this.handleChangeLayoutEngineType}
-            >
-              <option value={undefined}>None</option>
-              <option value={'SnapToGrid'}>Snap to Grid</option>
-              <option value={'VerticalTree'}>Vertical Tree</option>
-            </select>
-          </div>
-          <div className="pan-list">
-            <span>Pan To:</span>
-            <select onChange={this.onSelectPanNode}>
-              {nodes.map(node => (
-                <option key={node[NODE_KEY]} value={node[NODE_KEY]}>
-                  {node.title}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <Modal
-          style={modalStyles}
+        <ExpandableFormModal
+          title="Add a new node"
           isOpen={this.state.nodeModalIsOpen}
-        >
-          <h2> Add a new node </h2>
-          <form onSubmit={this.onSubmitCreateNode}>
-            <label>
-              Description: <input type="textarea" value={this.state.newNode ? this.state.newNode.description: ''} onChange={(e)=> this.onNewNodeChange({description: e.target.value})} />
-            </label>
-            <input type="submit" value="Submit"/>
-          </form>
-        </Modal>
-        <div id="graph" style={{ width: '80%', height: /*'calc(100% - 87px)'*/ '37rem'}}>
-          <GraphView
-            ref={el => (this.GraphView = el)}
-            nodeKey={NODE_KEY}
-            nodes={nodes}
-            edges={edges}
-            selected={selected}
-            nodeTypes={NodeTypes}
-            nodeSubtypes={NodeSubtypes}
-            edgeTypes={EdgeTypes}
-            onSelectNode={this.onSelectNode}
-            onCreateNode={this.onCreateNode}
-            onUpdateNode={this.onUpdateNode}
-            onDeleteNode={this.onDeleteNode}
-            onSelectEdge={this.onSelectEdge}
-            onCreateEdge={this.onCreateEdge}
-            onSwapEdge={this.onSwapEdge}
-            onDeleteEdge={this.onDeleteEdge}
-            onUndo={this.onUndo}
-            onCopySelected={this.onCopySelected}
-            onPasteSelected={this.onPasteSelected}
-            layoutEngineType={this.state.layoutEngineType}
-          />
+          onSubmit={this.onSubmitCreateNode}
+          onCancel={() => this.setState({nodeModalIsOpen: false})}
+        />
+        <div style={{ display: 'flex', flexDirection: 'row'}}>
+          <div id="graph" style={{ width: '80%', height: /*'calc(100% - 87px)'*/ '37rem'}}>
+            <GraphView
+              ref={el => (this.GraphView = el)}
+              nodeKey={NODE_KEY}
+              nodes={nodes}
+              edges={edges}
+              selected={selected}
+              nodeTypes={NodeTypes}
+              nodeSubtypes={NodeSubtypes}
+              edgeTypes={EdgeTypes}
+              onSelectNode={this.onSelectNode}
+              onCreateNode={this.onCreateNode}
+              onUpdateNode={this.onUpdateNode}
+              onDeleteNode={this.onDeleteNode}
+              onSelectEdge={this.onSelectEdge}
+              onCreateEdge={this.onCreateEdge}
+              onSwapEdge={this.onSwapEdge}
+              onDeleteEdge={this.onDeleteEdge}
+              onUndo={this.onUndo}
+              onCopySelected={this.onCopySelected}
+              onPasteSelected={this.onPasteSelected}
+              layoutEngineType={this.state.layoutEngineType}
+              edgeHandleSize={50}
+              renderNodeText={this.renderNodeText}
+              nodeSize={1000}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div>
+              <p> Controls: </p>
+              <ul>
+                <li> Create node: hold <code>shift</code> and left click at the location of your new node.</li>
+                <li> Create edge: hold <code>shift</code> and drag from the originating node to the destination node to create an edge</li>
+                <li> Deleting edge or node: simply press <code>delete</code> </li>
+              </ul>
+            </div>
+            <Divider/>
+            { !selected && <p> Click on a node or edge to find out more </p> }
+            <div style={{ width: '80%' }}>
+              { selected && (
+                <EditableInfoCard
+                  title={'Selected Node'}
+                  contents={selected.fields}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </>
     );

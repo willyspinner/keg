@@ -1,28 +1,8 @@
-// @flow
-/*
-  Copyright(c) 2018 Uber Technologies, Inc.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-          http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-*/
-
-/*
-  Example usage of GraphView component
-*/
-
 import * as React from 'react';
-import { Divider, Typography } from 'antd';
+import { Button, Modal, Select, Divider, Typography } from 'antd';
 import EditableInfoCard from './EditableInfoCard';
 import ExpandableFormModal from './ExpandableFormModal';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 
 import  GraphView from 'react-digraph'
 import GraphConfig, {
@@ -37,140 +17,17 @@ import GraphConfig, {
   SPECIAL_EDGE_TYPE,
   SPECIAL_TYPE,
   SKINNY_TYPE,
+  graphSample, 
 } from './graph-config'; // Configures node/edge types
 
 
 const { Title } = Typography;
 
+const { Option } = Select;
+
 // NOTE: Edges must have 'source' & 'target' attributes
 // In a more realistic use case, the graph would probably originate
 // elsewhere in the App or be generated from some other state upstream of this component.
-const sample = {
-  edges: [
-    {
-      handleText: '5',
-      handleTooltipText: '5',
-      source: 'start1',
-      target: 'a1',
-      type: SPECIAL_EDGE_TYPE,
-    },
-    {
-      handleText: '5',
-      handleTooltipText: 'This edge connects Node A and Node B',
-      source: 'a1',
-      target: 'a2',
-      type: SPECIAL_EDGE_TYPE,
-    },
-    {
-      handleText: '54',
-      source: 'a2',
-      target: 'a4',
-      type: EMPTY_EDGE_TYPE,
-    },
-    {
-      handleText: '54',
-      source: 'a1',
-      target: 'a3',
-      type: EMPTY_EDGE_TYPE,
-    },
-    {
-      handleText: '54',
-      source: 'a3',
-      target: 'a4',
-      type: EMPTY_EDGE_TYPE,
-    },
-    {
-      handleText: '54',
-      source: 'a1',
-      target: 'a5',
-      type: EMPTY_EDGE_TYPE,
-    },
-    {
-      handleText: '54',
-      source: 'a4',
-      target: 'a1',
-      type: EMPTY_EDGE_TYPE,
-    },
-    {
-      handleText: '54',
-      source: 'a1',
-      target: 'a6',
-      type: EMPTY_EDGE_TYPE,
-    },
-    {
-      handleText: '24',
-      source: 'a1',
-      target: 'a7',
-      type: EMPTY_EDGE_TYPE,
-    },
-  ],
-  nodes: [
-    {
-      id: 'start1',
-      title: 'Start (0)',
-      type: SPECIAL_TYPE,
-    },
-    {
-      id: 'a1',
-      title: 'Node A (1)',
-      type: SPECIAL_TYPE,
-      x: 258.3976135253906,
-      y: 331.9783248901367,
-    },
-    {
-      id: 'a2',
-      subtype: SPECIAL_CHILD_SUBTYPE,
-      title: 'Node B (2)',
-      type: EMPTY_TYPE,
-      x: 593.9393920898438,
-      y: 260.6060791015625,
-    },
-    {
-      id: 'a3',
-      title: 'Node C (3)',
-      type: EMPTY_TYPE,
-      x: 237.5757598876953,
-      y: 61.81818389892578,
-    },
-    {
-      id: 'a4',
-      title: 'Node D (4)',
-      type: EMPTY_TYPE,
-      x: 600.5757598876953,
-      y: 600.81818389892578,
-    },
-    {
-      id: 'a5',
-      title: 'Node E (5)',
-      type: null,
-      x: 50.5757598876953,
-      y: 500.81818389892578,
-    },
-    {
-      id: 'a6',
-      title: 'Node E (6)',
-      type: SKINNY_TYPE,
-      x: 300,
-      y: 600,
-    },
-    {
-      id: 'a7',
-      title: 'Node F (7)',
-      type: POLY_TYPE,
-      x: 0,
-      y: 300,
-    },
-    {
-      id: 'a8',
-      title: 'Node G (8)',
-      type: COMPLEX_CIRCLE_TYPE,
-      x: -200,
-      y: 400,
-    },
-  ],
-};
-
-// TODO: do we even need this?
 
 
 
@@ -178,7 +35,7 @@ class Graph extends React.Component {
 
   constructor(props) {
     super(props);
-    const graphUsed = JSON.parse(localStorage.graph || 'null') || sample
+    const graphUsed = JSON.parse(localStorage.graph || 'null') || graphSample
     console.log("GRAPH USED", graphUsed)
 
     this.state = {
@@ -485,27 +342,63 @@ class Graph extends React.Component {
        this.onUpdateNode(this.state.selected)
      })
    }
+  addNewProject = () => {
+    //TODO: show some modal or something?
+  }
 
   render() {
     const { nodes, edges } = this.state.graph;
     const selected = this.state.selected;
     const { NodeTypes, NodeSubtypes, EdgeTypes } = GraphConfig;
     console.log("SELECTED:", selected)
-    /*
-    * TODO: old shit
-          <label>
-            Name: <input type="textarea" value={this.state.newNode ? this.state.newNode.name: ''} onChange={(e)=> this.onNewNodeChange({name: e.target.value})} />
-          </label>
-     */
-
     return (
       <>
+        <Modal
+          visible={this.state.deleteProjectModalIsOpen}
+          title="Delete a project"
+          onOk={this.handleDelete}
+          onCancel={() => this.setState({deleteProjectModalIsOpen: false})}
+          footer={[
+            <Button key="back" onClick={() => this.setState({deleteProjectModalIsOpen: false})}>
+              Back
+            </Button>,
+            <Button key="submit" type="primary" danger onClick={this.handleDeleteProject}>
+              Delete my project
+            </Button>,
+          ]}
+        >
+          <p>Are you sure you want to delete your project? Once deleted, it is forever lost...</p>
+        </Modal>
+
         <ExpandableFormModal
           title="Add a new node"
           isOpen={this.state.nodeModalIsOpen}
           onSubmit={this.onSubmitCreateNode}
           onCancel={() => this.setState({nodeModalIsOpen: false})}
         />
+        <div style={{ marginBottom: '0.5em', display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Select 
+            defaultValue="default_proj"
+            style={{ paddingLeft: '1em' }}
+            dropdownRender={menu => (
+              <div>
+                {menu}
+                <Divider style={{ margin: '4px 0' }} />
+                <div style={{ display: 'flex', flexWrap: 'nowrap', padding: 8 }}>
+                  <a
+                    style={{ flex: 'none', padding: '8px', display: 'block', cursor: 'pointer' }}
+                    onClick={this.addNewProject}
+                  >
+                    <PlusOutlined /> New project
+                  </a>
+                </div>
+              </div>
+            )}
+          >
+            <Option value="default_proj"> <Title level={3}> My Project </Title> </Option> 
+          </Select>
+          <DeleteOutlined style={{ paddingRight: '1em', fontSize: '1.6em' }} onClick={() => this.setState({ deleteProjectModalIsOpen: true })}/>
+        </div>
         <div style={{ display: 'flex', flexDirection: 'row'}}>
           <div id="graph" style={{ width: '80%', height: /*'calc(100% - 87px)'*/ '37rem'}}>
             <GraphView

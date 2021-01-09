@@ -54,13 +54,15 @@ export default class ExpandableFormModal extends React.Component {
     })
   }
   onSubmit = () => {
-    this.props.onSubmit(this.state.fields)
+    const fieldsToSubmit = this.state.fields;
     this.setState({
-      fields: {},
+      fields: {
+        title: ''
+      },
       isCreatingNewField: false,
       newFieldName: '',
-    })
-  
+    }, () => this.props.onSubmit(fieldsToSubmit)
+    );
   }
 
   render() {
@@ -68,7 +70,7 @@ export default class ExpandableFormModal extends React.Component {
       <Modal
       title={this.props.title}
         visible={this.props.isOpen}
-        onOk={() => this.props.onSubmit(this.state.fields)}
+        onOk={this.onSubmit}
         onCancel={this.props.onCancel}
       >
         {this.state.fields && Object.keys(this.state.fields).map((key) => (

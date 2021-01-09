@@ -388,8 +388,8 @@ export default class Graph extends React.Component {
     this.setState(prevState => {
       const newProjects = prevState.projects;
       const deleteProjectId = prevState.currentProjectId;
-      const selectedProjectId = Object.keys(prevState.projects)[0] || '';
       delete newProjects[deleteProjectId];
+      const selectedProjectId = Object.keys(newProjects)[0] || '';
       return {
         projects: newProjects,
         currentProjectId: selectedProjectId,
@@ -416,7 +416,7 @@ export default class Graph extends React.Component {
           onPressEnter={this.onAddNewProject}
         />
         </Modal>
-        { Object.keys(this.state.projects).length > 0 && (
+        { Object.keys(this.state.projects).length > 0 && this.state.projects[this.state.currentProjectId] && (
           <>
             <Modal
               visible={this.state.deleteProjectModalIsOpen}
@@ -459,7 +459,8 @@ export default class Graph extends React.Component {
         </>
       )
     } else {
-      const { nodes, edges } = this.state.projects[this.state.currentProjectId].graph;
+    // TODO: should probably fix this. Bug when deleting the first project.
+      const { nodes, edges } = (this.state.projects[this.state.currentProjectId] || { graph: { nodes: [], edges: [] }}).graph;
       const selected = this.state.selected;
       const { NodeTypes, NodeSubtypes, EdgeTypes } = GraphConfig;
       return (

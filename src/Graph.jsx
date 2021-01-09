@@ -35,15 +35,22 @@ class Graph extends React.Component {
 
   constructor(props) {
     super(props);
-    const graphUsed = JSON.parse(localStorage.graph || 'null') || graphSample
-    console.log("GRAPH USED", graphUsed)
+    /* SEE HERE: This is the way we save it in localStorage */
+    const defaultSave  = {
+      projects: {
+        'sample project': graphSample
+      },
+      currentProject: 'sample project'
+    };
+
+    const appSave = JSON.parse(localStorage.existingSave || 'null') || defaultSave
 
     this.state = {
       copiedNode: null,
-      graph: graphUsed,
+      currentProject: appSave.currentProject,
       layoutEngineType: undefined,
       selected: null,
-      totalNodes: graphUsed.nodes.length,
+      projects: appSave.projects,
     };
 
     this.GraphView = React.createRef();
@@ -51,14 +58,14 @@ class Graph extends React.Component {
 
   // Helper to find the index of a given node
   getNodeIndex(searchNode: INode | any) {
-    return this.state.graph.nodes.findIndex(node => {
+    return this.state.projects[this.state.currentProject].nodes.findIndex(node => {
       return node[NODE_KEY] === searchNode[NODE_KEY];
     });
   }
 
   // Helper to find the index of a given edge
   getEdgeIndex(searchEdge: IEdge) {
-    return this.state.graph.edges.findIndex(edge => {
+    return this.state.projects[this.state.currentProject].edges.findIndex(edge => {
       return (
         edge.source === searchEdge.source && edge.target === searchEdge.target
       );
@@ -72,12 +79,12 @@ class Graph extends React.Component {
     searchNode[NODE_KEY] = nodeKey;
     const i = this.getNodeIndex(searchNode);
 
-    return this.state.graph.nodes[i];
+    return this.state.projects[this.state.currentProject].nodes[i];
   }
 
 
   addStartNode = () => {
-    const graph = this.state.graph;
+    const graph = this.state.projects[this.state.currentProject];
 
     // using a new array like this creates a new memory reference
     // this will force a re-render
@@ -89,7 +96,7 @@ class Graph extends React.Component {
         x: 0,
         y: 0,
       },
-      ...this.state.graph.nodes,
+      ...this.state.projects[this.state.currentProject].nodes,
     ];
     console.log("SETTING STATE...")
     this.setState({
@@ -98,12 +105,12 @@ class Graph extends React.Component {
     console.log("OK...")
   };
   deleteStartNode = () => {
-    const graph = this.state.graph;
+    const graph = this.state.projects[this.state.currentProject];
 
     graph.nodes.splice(0, 1);
     // using a new array like this creates a new memory reference
     // this will force a re-render
-    graph.nodes = [...this.state.graph.nodes];
+    graph.nodes = [...this.state.projects[this.state.currentProject].nodes];
     this.setState({
       graph,
     });
@@ -114,13 +121,18 @@ class Graph extends React.Component {
    */
 
   saveLocalStorage = () => {
-    localStorage.graph = JSON.stringify(this.state.graph)
+    // TODO:
+    //localStorage.graph = JSON.stringify(this.state.projects[this.state.currentProject])
+    localStorage.existingSave = JSON.stringify({
+      projects: this.state.projects,
+      currentProject: this.state.currentProject,
+    });
   }
 
   // Called by 'drag' handler, etc..
   // to sync updates from D3 with the graph
   onUpdateNode = (viewNode: INode) => {
-    const graph = this.state.graph;
+    const graph = this.state.projects[this.state.currentProject];
     const i = this.getNodeIndex(viewNode);
 
     graph.nodes[i] = viewNode;
@@ -150,11 +162,10 @@ class Graph extends React.Component {
   };
 
   onSubmitCreateNode = (fields) => {
-    console.log("SUBMITTED:", fields)
     //const type = Math.random() < 0.25 ? SPECIAL_TYPE : EMPTY_TYPE;
     const type = EMPTY_TYPE;
     const { x, y } = this.state.newNode || {};
-    const graph = this.state.graph;
+    const graph = this.state.projects[this.state.currentProject];
     if (!x || ! y)  {
       console.log("NEWNODE is bad", this.state.newNode)
       return
@@ -185,7 +196,7 @@ class Graph extends React.Component {
 
   // Deletes a node from the graph
   onDeleteNode = (viewNode: INode, nodeId: string, nodeArr: INode[]) => {
-    const graph = this.state.graph;
+    const graph = this.state.projects[this.state.currentProject];
     // Delete any connected edges
     const newEdges = graph.edges.filter((edge, i) => {
       return (
@@ -202,7 +213,7 @@ class Graph extends React.Component {
 
   // Creates a new node between two edges
   onCreateEdge = (sourceViewNode: INode, targetViewNode: INode) => {
-    const graph = this.state.graph;
+    const graph = this.state.projects[this.state.currentProject];
     // This is just an example - any sort of logic
     // could be used here to determine edge type
     /*
@@ -236,7 +247,7 @@ class Graph extends React.Component {
     targetViewNode: INode,
     viewEdge: IEdge
   ) => {
-    const graph = this.state.graph;
+    const graph = this.state.projects[this.state.currentProject];
     const i = this.getEdgeIndex(viewEdge);
     const edge = JSON.parse(JSON.stringify(graph.edges[i]));
 
@@ -255,7 +266,7 @@ class Graph extends React.Component {
 
   // Called when an edge is deleted
   onDeleteEdge = (viewEdge: IEdge, edges: IEdge[]) => {
-    const graph = this.state.graph;
+    const graph = this.state.projects[this.state.currentProject];
 
     graph.edges = edges;
     this.setState({
@@ -291,7 +302,7 @@ class Graph extends React.Component {
 
   // Pastes the selected node to mouse position
   onPasteSelected = (node: INode, mousePosition?: [number, number]) => {
-    const graph = this.state.graph;
+    const graph = this.state.projects[this.state.currentProject];
 
     const newNode = {
       ...node,
@@ -347,7 +358,7 @@ class Graph extends React.Component {
   }
 
   render() {
-    const { nodes, edges } = this.state.graph;
+    const { nodes, edges } = this.state.projects[this.state.currentProject];
     const selected = this.state.selected;
     const { NodeTypes, NodeSubtypes, EdgeTypes } = GraphConfig;
     console.log("SELECTED:", selected)
@@ -395,7 +406,7 @@ class Graph extends React.Component {
               </div>
             )}
           >
-            <Option value="default_proj"> <Title level={3}> My Project </Title> </Option> 
+            <Option value="default_proj"> <Title level={4}> My Project </Title> </Option> 
           </Select>
           <DeleteOutlined style={{ paddingRight: '1em', fontSize: '1.6em' }} onClick={() => this.setState({ deleteProjectModalIsOpen: true })}/>
         </div>
@@ -428,9 +439,9 @@ class Graph extends React.Component {
               nodeSize={1000}
             />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ width: '40%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div>
-              <Title level={4}> Controls: </Title>
+              <Title level={4} style={{ textAlign: 'center' }}> Controls: </Title>
               <ul>
                 <li> Create node: hold <code>shift</code> and left click at the location of your new node.</li>
                 <li> Create edge: hold <code>shift</code> and drag from the originating node to the destination node to create an edge</li>

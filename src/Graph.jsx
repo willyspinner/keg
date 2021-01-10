@@ -93,10 +93,19 @@ export default class Graph extends React.Component {
     return this.state.projects[this.state.currentProjectId].graph.nodes[i];
   }
 
-
-  /*
-   * Handlers/Interaction
-   */
+  updateAndSaveGraph = (projectId, newGraph, objs, cb = () => {}) => {
+    this.setState(prevState => {
+      let newProjects = prevState.projects;
+      newProjects[projectId].graph = newGraph;
+      return {
+        projects: newProjects,
+        ...objs,
+      };
+    }, () => {
+      this.saveLocalStorage();
+      cb();
+    });
+  }
 
   saveLocalStorage = () => {
     localStorage.existingSave = JSON.stringify({
@@ -105,23 +114,21 @@ export default class Graph extends React.Component {
     });
   }
 
+  /*
+   * Handlers/Interaction
+   */
+
+
+
+
   // Called by 'drag' handler, etc..
   // to sync updates from D3 with the graph
   onUpdateNode = (viewNode: INode) => {
     const projectId = this.state.currentProjectId;
     const graph = this.state.projects[projectId].graph;
     const i = this.getNodeIndex(viewNode);
-
     graph.nodes[i] = viewNode;
-    this.setState(prevState => {
-      let newProjects = prevState.projects;
-      newProjects[projectId].graph = graph;
-      return {
-        projects: newProjects,
-      };
-    }, () => {
-      this.saveLocalStorage()
-    });
+    this.updateAndSaveGraph(projectId, graph);
   };
 
   onUpdateEdge = (viewEdge: IEdge) => {
@@ -129,15 +136,7 @@ export default class Graph extends React.Component {
     const graph = this.state.projects[projectId].graph;
     const i = this.getEdgeIndex(viewEdge);
     graph.edges[i] = viewEdge;
-    this.setState(prevState => {
-      let newProjects = prevState.projects;
-      newProjects[projectId].graph = graph;
-      return {
-        projects: newProjects,
-      };
-    }, () => {
-      this.saveLocalStorage()
-    });
+    this.updateAndSaveGraph(projectId, graph);
   };
   // Node 'mouseUp' handler
   onSelectNode = (viewNode: INode | null) => {
@@ -185,16 +184,7 @@ export default class Graph extends React.Component {
     };
 
     graph.nodes = [...graph.nodes, node];
-    this.setState(prevState => {
-      const newProjects = prevState.projects;
-      newProjects[prevState.currentProjectId].graph = graph;
-      return {
-        projects: newProjects,
-        formModalIsOpen: false,
-      };
-    }, () => {
-      this.saveLocalStorage()
-    });
+    this.updateAndSaveGraph(this.state.currentProjectId, graph, { formModalIsOpen : false });
   }
 
   onNewNodeChange = (newMappings) => {
@@ -208,7 +198,6 @@ export default class Graph extends React.Component {
 
   // Deletes a node from the graph
   onDeleteNode = (viewNode: INode /*,nodeId: string, nodeArr: INode[]*/) => {
-    console.log("CALLED")
     const graph = this.state.projects[this.state.currentProjectId].graph;
     // Delete any connected edges
     const newEdges = graph.edges.filter((edge, i) => {
@@ -219,17 +208,9 @@ export default class Graph extends React.Component {
 
     graph.nodes = graph.nodes.filter((n) => n[NODE_KEY] !== viewNode[NODE_KEY]);
     graph.edges = newEdges;
-
-    this.setState(prevState => {
-      let newProjects = prevState.projects;
-      newProjects[prevState.currentProjectId].graph = graph;
-      return {
-        projects: newProjects,
-        selected: null
-        };
-    });
-    this.saveLocalStorage()
+    this.updateAndSaveGraph(this.state.currentProjectId, graph, { selected: null });
   };
+
   onSubmitCreateObject = (fields) => {
     if (!this.state.candidateNewObject) {
       console.error("No candidateNewObject state when onSubmitCreateObject() was called.")
@@ -280,18 +261,7 @@ export default class Graph extends React.Component {
       id: uuidv4(),
     }
     graph.edges = [...graph.edges, edge];
-    this.setState(prevState => {
-      const newProjects = prevState.projects;
-      newProjects[prevState.currentProjectId].graph = graph;
-      return {
-        projects: newProjects,
-        selected: edge,
-        formModalIsOpen: false,
-      };
-    }, () => {
-      this.saveLocalStorage()
-    });
-
+    this.updateAndSaveGraph(this.state.currentProjectId, graph, { selected: edge, formModalIsOpen: false });
   }
 
   // Called when an edge is reattached to a different target.
@@ -319,17 +289,9 @@ export default class Graph extends React.Component {
 
   // Called when an edge is deleted
   onDeleteEdge = (viewEdge: IEdge) => {
-    this.setState(prevState => {
-      const graph = prevState.projects[prevState.currentProjectId].graph;
-      graph.edges = graph.edges.filter((e) => e.id !== viewEdge.id);
-      let newProjects = prevState.projects;
-      newProjects[prevState.currentProjectId].graph = graph;
-      return {
-        projects: newProjects,
-        selected: null
-        };
-    });
-    this.saveLocalStorage()
+    const graph = this.state.projects[this.state.currentProjectId].graph;
+    graph.edges = graph.edges.filter((e) => e.id !== viewEdge.id);
+    this.updateAndSaveGraph(this.state.currentProjectId, graph, { selected: null });
   };
 
   onUndo = () => {
@@ -368,11 +330,8 @@ export default class Graph extends React.Component {
     };
 
     graph.nodes = [...graph.nodes, newNode];
-    this.setState(prevState => {
-      const newProjects = prevState.projects;
-      newProjects[prevState.currentProjectId].graph = graph;
-      return { projects: newProjects };
-    }, () => this.forceUpdate());
+
+    this.updateAndSaveGraph(this.state.currentProjectId, graph, { }, this.forceUpdate);
   };
 
   handleChangeLayoutEngineType = (event: any) => {
@@ -423,7 +382,7 @@ export default class Graph extends React.Component {
     console.log("CREATING NEW PRJ", newProjectId, this.state.newProjectName)
     this.setState(prevState => ({
       newProjectName: '',
-      selected: null, 
+      selected: null,
       projects: {
         ...prevState.projects,
         [newProjectId]: {
@@ -450,6 +409,7 @@ export default class Graph extends React.Component {
       return {
         projects: newProjects,
         currentProjectId: selectedProjectId,
+        selected: null, 
         deleteProjectModalIsOpen: false,
       }
     }, () => {

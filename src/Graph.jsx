@@ -518,7 +518,7 @@ export default class Graph extends React.Component {
             <DeleteOutlined style={{ paddingRight: '1em', fontSize: '1.6em' }} onClick={() => this.setState({ deleteProjectModalIsOpen: true })}/>
           </div>
           <div style={{ display: 'flex', flexDirection: 'row'}}>
-            <div id="graph" style={{ width: '80%', height: '37rem' }}>
+            <div id="graph" style={{ width: '80%', height: '30rem' }}>
                 <GraphView
                   ref={el => (this.GraphView = el)}
                   nodeKey={NODE_KEY}
@@ -551,8 +551,8 @@ export default class Graph extends React.Component {
                 <Title level={4} style={{ textAlign: 'center' }}> Controls </Title>
                 <ul>
                   <li> Create node: hold <Text code>shift</Text> and <Text code>left click</Text> at the location of your new node.</li>
-                  <li> Create edge: hold <Text code>shift</Text> and drag from the originating node to the destination node to create an edge.</li>
-                  <li> Deleting edge or node: Click trash icon on card. </li>
+                  <li> Create edge: hold <Text code>shift</Text> and drag from the originating node to the destination node.</li>
+                  <li> Deleting edge or node: Click trash icon on card </li>
                 </ul>
                 <p style={{ marginLeft: '1em', }}> Please use <Text code>shift+enter</Text>  when entering a newline in text. </p>
               </div>

@@ -16,7 +16,7 @@ const Header = (props) => {
   }
   console.log("DEL CONF", showDeletionConfirm)
   return (
-    <div style={{ backgroundColor: '#ffff0fa3', borderBottom: '1px solid #eaeaea', display: 'flex', paddingBottom: '0.5em', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+    <div style={{ backgroundColor: '#ffff0fa3', borderBottom: '0.3em solid #eaeaea', display: 'flex', paddingBottom: '0.5em', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
       <div style={{ display:'flex', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-end' }}>
         <DeploymentUnitOutlined style={{ marginLeft: '0.2em', fontSize: '3rem' }}/>
         <Title level={1} style={{ marginBottom: 0, marginLeft: '0.5rem' }}> Keg </Title>

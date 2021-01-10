@@ -64,13 +64,19 @@ export default class ExpandableFormModal extends React.Component {
     );
   }
 
+  onHandlePressEnter = (e) => {
+    if (!e.shiftKey && ! e.ctrlKey) {
+      this.onSubmit();
+    }
+  }
+
   render() {
-    console.log("FIELDS", this.state.fields)
     return (
       <Modal
       title={this.props.title}
         visible={this.props.isOpen}
         onOk={this.onSubmit}
+        okText={"Ok (or press Enter)"}
         onCancel={this.props.onCancel}
       >
         {this.state.fields && Object.keys(this.state.fields).map((key) => (
@@ -84,6 +90,7 @@ export default class ExpandableFormModal extends React.Component {
             <TextArea
               value={this.state.fields[key]}
               onChange={(e) => this.setState({ fields: { ...this.state.fields, [key]: e.target.value }})}
+              onPressEnter={this.onHandlePressEnter}
             />
           </div>
         ))}

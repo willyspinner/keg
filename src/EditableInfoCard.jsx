@@ -26,10 +26,18 @@ const EditableInfoCard = ({ title, onEditContents, onDeleteCard, contentId, cont
   const [isCreatingNewField, setIsCreatingNewField] = useState(false);
   const [newFieldName, setNewFieldName] = useState('')
 
+
   const onConfirmTextArea = (k) => {
   onEditContents({ edited: { [k]: editingValues[k] }})
     setEditingValues({...editingValues, [k]: undefined })
   }
+
+  const onHandleEnterPress = (e, k) => {
+    if (!e.shiftKey && ! e.ctrlKey) {
+      onConfirmTextArea(k);
+    }
+  }
+
   useEffect(() => {
     setIsCreatingNewField(false);
     setEditingValues({});
@@ -69,7 +77,7 @@ const EditableInfoCard = ({ title, onEditContents, onDeleteCard, contentId, cont
         {contents && Object.keys(contents).map((k, i) => (
           <div key={i} style={{ display: 'flex', width: '100%', flexDirection: 'column', alignItems: 'flex-start' }}>
             <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <div style={{ display: 'flex', flexDirection: 'row' }}>
+              <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline' }}>
                 <Title underline level={5} style={{ marginRight: '0.5em'}}> {k} </Title>
                 { editingValues[k] === undefined ? (
                   <EditOutlined onClick={() => setEditingValues({...editingValues, [k]: contents[k] })}/>
@@ -89,6 +97,7 @@ const EditableInfoCard = ({ title, onEditContents, onDeleteCard, contentId, cont
               style={{ width: '100%' }}
               defaultValue={contents[k]}
               autoSize={true}
+              onPressEnter={(e) => onHandleEnterPress(e, k)}
               onChange={(e) => setEditingValues({...editingValues, [k]: e.target.value})}
             />
             ) :

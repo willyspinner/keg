@@ -548,12 +548,13 @@ export default class Graph extends React.Component {
             </div>
             <div style={{ width: '40%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div>
-                <Title level={4} style={{ textAlign: 'center' }}> Controls: </Title>
+                <Title level={4} style={{ textAlign: 'center' }}> Controls </Title>
                 <ul>
-                  <li> Create node: hold <code>shift</code> and left click at the location of your new node.</li>
-                  <li> Create edge: hold <code>shift</code> and drag from the originating node to the destination node to create an edge.</li>
+                  <li> Create node: hold <Text code>shift</Text> and <Text code>left click</Text> at the location of your new node.</li>
+                  <li> Create edge: hold <Text code>shift</Text> and drag from the originating node to the destination node to create an edge.</li>
                   <li> Deleting edge or node: Click trash icon on card. </li>
                 </ul>
+                <p style={{ marginLeft: '1em', }}> Please use <Text code>shift+enter</Text>  when entering a newline in text. </p>
               </div>
               <Divider/>
               { !selected && <p> Click on a node or edge to find out more </p> }

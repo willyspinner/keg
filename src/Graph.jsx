@@ -354,25 +354,31 @@ export default class Graph extends React.Component {
     )
   }
 
-   onEditCardContents = (editedFields) => {
-     this.setState(prevState => ({
-       selected: {
-         ...prevState.selected,
-         fields: {
-           ...prevState.selected.fields,
-           ...editedFields
-         },
-       }
-     }), () => {
-       // TODO: BUG:PROBLEM in onUpdateNode. made it deselect as soon as card content edited.
-       if (this.state.selected.objectType === 'node') {
-         this.onUpdateNode({ ...this.state.selected, title: this.state.selected.fields.title });
-       } else {
-         // we create this because we are editing the card contents of the edge.
-         this.onUpdateEdge({ ...this.state.selected, handleText: this.state.selected.fields.title }) 
-       }
-     })
-   }
+
+  onEditCardContents = ({ edited = {}, deleted = []}) => {
+    // { edited: { 'yourFieldNameHere': value }, deleted: ['field1', 'field2'] }
+    this.setState(prevState => {
+      let newObject = prevState.selected;
+      deleted.forEach((deletedField) => {
+        delete newObject.fields[deletedField]
+      });
+      Object.keys(edited).forEach((key) => {
+        newObject.fields[key] = edited[key];
+      })
+      return {
+        selected: newObject,
+      };
+    }, () => {
+      // TODO: BUG:PROBLEM in onUpdateNode. made it deselect as soon as card content edited.
+      if (this.state.selected.objectType === 'node') {
+        this.onUpdateNode({ ...this.state.selected, title: this.state.selected.fields.title });
+      } else {
+        // we create this because we are editing the card contents of the edge.
+        this.onUpdateEdge({ ...this.state.selected, handleText: this.state.selected.fields.title }) 
+      }
+    })
+  }
+
   onAddNewProject = () => {
     if(this.state.newProjectName === '') {
       alert("Invalid new project name");
@@ -556,6 +562,7 @@ export default class Graph extends React.Component {
                   <EditableInfoCard
                     title={`Selected ${selected.objectType}`}
                     contents={selected.fields}
+                    contentId={selected.id}
                     onEditContents={this.onEditCardContents}
                     onDeleteCard={() => this.onDeleteObject(selected)}
                   />

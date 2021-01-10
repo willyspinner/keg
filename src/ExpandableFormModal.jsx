@@ -26,7 +26,6 @@ export default class ExpandableFormModal extends React.Component {
   }
 
   onAddNewField = () => {
-    console.log("CLICKED")
     this.setState(prevState =>({
       isCreatingNewField: true
     }));
@@ -66,6 +65,7 @@ export default class ExpandableFormModal extends React.Component {
   }
 
   render() {
+    console.log("FIELDS", this.state.fields)
     return (
       <Modal
       title={this.props.title}
@@ -81,10 +81,13 @@ export default class ExpandableFormModal extends React.Component {
                 <DeleteOutlined onClick={() => this.deleteField(key)} />
               }
             </div>
-            <TextArea onChange={(e) => this.setState({ fields: { ...this.state.fields, [key]: e.target.value }})}/>
+            <TextArea
+              value={this.state.fields[key]}
+              onChange={(e) => this.setState({ fields: { ...this.state.fields, [key]: e.target.value }})}
+            />
           </div>
         ))}
-        {this.state.isCreatingNewField && 
+        {this.state.isCreatingNewField ? (
           <div style= {{ marginTop: '1em' }}>
             <Input
               onPressEnter={this.onConfirmNewField}
@@ -98,12 +101,11 @@ export default class ExpandableFormModal extends React.Component {
               }
             />
           </div>
-        }
-        {!this.state.isCreatingNewField && (
+        ) : (
           <div style={{ marginTop: '0.5em', display: 'flex', flexDirection: 'row', justifyContent: 'flex-end'}}>
-          <Tooltip title="Click to add more attributes">
-            <PlusCircleOutlined onClick={this.onAddNewField} twoToneColor="#52c41a"/>
-          </Tooltip>
+            <Tooltip title="Click to add more attributes">
+              <PlusCircleOutlined onClick={this.onAddNewField} twoToneColor="#52c41a"/>
+            </Tooltip>
           </div>
         )}
       </Modal>

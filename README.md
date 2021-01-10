@@ -17,10 +17,9 @@ Some use cases that this tool can help you with:
 ## Sprint backlog
 
 ### TODO
-- create edge explorer (shows cards of adjacent nodes by edge predicate) - when clicked on, you can explore in graph.
 
 ### Doing
--  create feature to delete and add attributes from accompanying section
+- create edge/node explorer (shows cards of adjacent nodes by edge predicate) - when clicked on, you can explore in graph.
 
 
 ### Done
@@ -30,4 +29,5 @@ Some use cases that this tool can help you with:
 -  make accompanying section editable
 -  add multiple projects support
 - make edges customizable and configurable.
+- create feature to delete and add attributes from accompanying section
 

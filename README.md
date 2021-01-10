@@ -12,11 +12,10 @@ cool stuff ay
 ## Sprint backlog
 
 ### TODO
--  create feature to delete and add attributes from accompanying section (not high priority though)
 - create edge explorer (shows cards of adjacent nodes by edge predicate) - when clicked on, you can explore in graph.
 
 ### Doing
-- make edges customizable and configurable.
+-  create feature to delete and add attributes from accompanying section
 
 
 ### Done
@@ -25,4 +24,5 @@ cool stuff ay
 -  When creating a new node, add an option to create more attributes if needed.
 -  make accompanying section editable
 -  add multiple projects support
+- make edges customizable and configurable.
 

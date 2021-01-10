@@ -26,6 +26,10 @@ const { Title, Text } = Typography;
 
 const { Option } = Select;
 
+const keyMap = {
+  DELETE_OBJECT: "shift+x",
+}
+
 // NOTE: Edges must have 'source' & 'target' attributes
 // In a more realistic use case, the graph would probably originate
 // elsewhere in the App or be generated from some other state upstream of this component.
@@ -56,11 +60,11 @@ export default class Graph extends React.Component {
       selected: null,
       newProjectName: '',
       projects: appSave.projects,
+      candidateNewObject: null,
       isCreatingNewProject: false,
     };
 
     this.GraphView = React.createRef();
-    // TODO: default view when you don't have any projects.
   }
 
   // Helper to find the index of a given node
@@ -90,45 +94,11 @@ export default class Graph extends React.Component {
   }
 
 
-  addStartNode = () => {
-    const graph = this.state.projects[this.state.currentProjectId].graph;
-
-    // using a new array like this creates a new memory reference
-    // this will force a re-render
-    graph.nodes = [
-      {
-        id: Date.now(),
-        title: 'Node A',
-        type: SPECIAL_TYPE,
-        x: 0,
-        y: 0,
-      },
-      ...this.state.projects[this.state.currentProjectId].graph.nodes,
-    ];
-    console.log("SETTING STATE...")
-    this.setState({
-      graph,
-    });
-    console.log("OK...")
-  };
-  deleteStartNode = () => {
-    const graph = this.state.projects[this.state.currentProjectId].graph;
-
-    graph.nodes.splice(0, 1);
-    // using a new array like this creates a new memory reference
-    // this will force a re-render
-    graph.nodes = [...this.state.projects[this.state.currentProjectId].graph.nodes];
-    this.setState({
-      graph,
-    });
-  };
-
   /*
    * Handlers/Interaction
    */
 
   saveLocalStorage = () => {
-    // TODO:
     localStorage.existingSave = JSON.stringify({
       projects: this.state.projects,
       currentProjectId: this.state.currentProjectId,
@@ -138,31 +108,64 @@ export default class Graph extends React.Component {
   // Called by 'drag' handler, etc..
   // to sync updates from D3 with the graph
   onUpdateNode = (viewNode: INode) => {
-    const graph = this.state.projects[this.state.currentProjectId].graph;
+    const projectId = this.state.currentProjectId;
+    const graph = this.state.projects[projectId].graph;
     const i = this.getNodeIndex(viewNode);
 
     graph.nodes[i] = viewNode;
-    this.setState({ graph });
-    this.saveLocalStorage()
+    this.setState(prevState => {
+      let newProjects = prevState.projects;
+      newProjects[projectId].graph = graph;
+      return {
+        projects: newProjects,
+      };
+    }, () => {
+      this.saveLocalStorage()
+    });
   };
 
+  onUpdateEdge = (viewEdge: IEdge) => {
+    const projectId = this.state.currentProjectId;
+    const graph = this.state.projects[projectId].graph;
+    const i = this.getEdgeIndex(viewEdge);
+    graph.edges[i] = viewEdge;
+    this.setState(prevState => {
+      let newProjects = prevState.projects;
+      newProjects[projectId].graph = graph;
+      return {
+        projects: newProjects,
+      };
+    }, () => {
+      this.saveLocalStorage()
+    });
+  };
   // Node 'mouseUp' handler
   onSelectNode = (viewNode: INode | null) => {
     // Deselect events will send Null viewNode
-    this.setState({ selected: viewNode });
+    if (viewNode) {
+      this.setState({ selected: { ...viewNode, objectType: 'node' }});
+    } else {
+      this.setState({ selected: null })
+
+    }
   };
 
   // Edge 'mouseUp' handler
   onSelectEdge = (viewEdge: IEdge) => {
-    this.setState({ selected: viewEdge });
+  this.setState({ selected: { ...viewEdge, objectType: 'edge' }});
   };
 
   // Updates the graph with a new node
   onCreateNode = (x: number, y: number, mouseEvt) => {
     console.log("ON CREATE NODE CALLEd", x, y, mouseEvt)
     this.setState({
-      nodeModalIsOpen: true,
-      newNode: {x, y, name: ''}
+      formModalIsOpen: true,
+      candidateNewObject: {
+        x,
+        y,
+        name: '',
+        objectType: 'node',
+      } /* used to be newNode */
     })
 
   };
@@ -172,13 +175,8 @@ export default class Graph extends React.Component {
     const type = EMPTY_TYPE;
     const { x, y } = this.state.newNode || {};
     const graph = this.state.projects[this.state.currentProjectId].graph;
-    if (!x || ! y)  {
-      console.log("NEWNODE is bad", this.state.newNode)
-      return
-
-    }
     const node = {
-      id: Date.now(),
+      id: uuidv4(),
       title: fields.title,
       fields, 
       type,
@@ -187,8 +185,16 @@ export default class Graph extends React.Component {
     };
 
     graph.nodes = [...graph.nodes, node];
-    this.setState({ graph, nodeModalIsOpen: false });
-    this.saveLocalStorage()
+    this.setState(prevState => {
+      const newProjects = prevState.projects;
+      newProjects[prevState.currentProjectId].graph = graph;
+      return {
+        projects: newProjects,
+        formModalIsOpen: false,
+      };
+    }, () => {
+      this.saveLocalStorage()
+    });
   }
 
   onNewNodeChange = (newMappings) => {
@@ -201,7 +207,8 @@ export default class Graph extends React.Component {
   }
 
   // Deletes a node from the graph
-  onDeleteNode = (viewNode: INode, nodeId: string, nodeArr: INode[]) => {
+  onDeleteNode = (viewNode: INode /*,nodeId: string, nodeArr: INode[]*/) => {
+    console.log("CALLED")
     const graph = this.state.projects[this.state.currentProjectId].graph;
     // Delete any connected edges
     const newEdges = graph.edges.filter((edge, i) => {
@@ -210,42 +217,82 @@ export default class Graph extends React.Component {
       );
     });
 
-    graph.nodes = nodeArr;
+    graph.nodes = graph.nodes.filter((n) => n[NODE_KEY] !== viewNode[NODE_KEY]);
     graph.edges = newEdges;
 
-    this.setState({ graph, selected: null });
+    this.setState(prevState => {
+      let newProjects = prevState.projects;
+      newProjects[prevState.currentProjectId].graph = graph;
+      return {
+        projects: newProjects,
+        selected: null
+        };
+    });
     this.saveLocalStorage()
   };
+  onSubmitCreateObject = (fields) => {
+    if (!this.state.candidateNewObject) {
+      console.error("No candidateNewObject state when onSubmitCreateObject() was called.")
+      return
+    }
+    if (this.state.candidateNewObject.objectType === 'node') {
+      this.onSubmitCreateNode(fields)
+    } else {
+      this.onSubmitCreateEdge(fields)
+    }
+
+  }
+
+  onDeleteObject = (selectedObject) => {
+    if (selectedObject.objectType === 'node') {
+      this.onDeleteNode(selectedObject)
+    } else {
+      this.onDeleteEdge(selectedObject)
+    }
+  }
 
   // Creates a new node between two edges
   onCreateEdge = (sourceViewNode: INode, targetViewNode: INode) => {
     const graph = this.state.projects[this.state.currentProjectId].graph;
-    // This is just an example - any sort of logic
-    // could be used here to determine edge type
-    /*
-    const type =
-      sourceViewNode.type === SPECIAL_TYPE
-        ? SPECIAL_EDGE_TYPE
-        : EMPTY_EDGE_TYPE;
-
-    */
     const viewEdge = {
       source: sourceViewNode[NODE_KEY],
       target: targetViewNode[NODE_KEY],
-//type: EMPTY_EDGE_TYPE,
-      handleText: 'Infl'
+      objectType: 'edge',
+      fields: {},
+      handleText: 'edge' // TODO: make this customizable?
     };
 
     // Only add the edge when the source node is not the same as the target
     if (viewEdge.source !== viewEdge.target) {
-      graph.edges = [...graph.edges, viewEdge];
       this.setState({
-        graph,
-        selected: viewEdge,
-      });
-      this.saveLocalStorage()
+        candidateNewObject: viewEdge,
+        formModalIsOpen: true,
+      })
     }
   };
+
+  onSubmitCreateEdge = (fields) => {
+    const graph = this.state.projects[this.state.currentProjectId].graph;
+    const edge = {
+      ...this.state.candidateNewObject,
+      fields,
+      handleText: fields.title,
+      id: uuidv4(),
+    }
+    graph.edges = [...graph.edges, edge];
+    this.setState(prevState => {
+      const newProjects = prevState.projects;
+      newProjects[prevState.currentProjectId].graph = graph;
+      return {
+        projects: newProjects,
+        selected: edge,
+        formModalIsOpen: false,
+      };
+    }, () => {
+      this.saveLocalStorage()
+    });
+
+  }
 
   // Called when an edge is reattached to a different target.
   onSwapEdge = (
@@ -271,13 +318,16 @@ export default class Graph extends React.Component {
   };
 
   // Called when an edge is deleted
-  onDeleteEdge = (viewEdge: IEdge, edges: IEdge[]) => {
-    const graph = this.state.projects[this.state.currentProjectId].graph;
-
-    graph.edges = edges;
-    this.setState({
-      graph,
-      selected: null,
+  onDeleteEdge = (viewEdge: IEdge) => {
+    this.setState(prevState => {
+      const graph = prevState.projects[prevState.currentProjectId].graph;
+      graph.edges = graph.edges.filter((e) => e.id !== viewEdge.id);
+      let newProjects = prevState.projects;
+      newProjects[prevState.currentProjectId].graph = graph;
+      return {
+        projects: newProjects,
+        selected: null
+        };
     });
     this.saveLocalStorage()
   };
@@ -312,13 +362,17 @@ export default class Graph extends React.Component {
 
     const newNode = {
       ...node,
-      id: Date.now(),
+      id: uuidv4(),
       x: mousePosition ? mousePosition[0] : node.x,
       y: mousePosition ? mousePosition[1] : node.y,
     };
 
     graph.nodes = [...graph.nodes, newNode];
-    this.forceUpdate();
+    this.setState(prevState => {
+      const newProjects = prevState.projects;
+      newProjects[prevState.currentProjectId].graph = graph;
+      return { projects: newProjects };
+    }, () => this.forceUpdate());
   };
 
   handleChangeLayoutEngineType = (event: any) => {
@@ -336,14 +390,10 @@ export default class Graph extends React.Component {
   renderNodeText = (data, id, isSelected) => {
     // TODO: customise node text here
     // TODO: this is buggy.
-    console.log("DATA", data, "ID", id)
     return (
-      <text x='0' y='0'> {data.title} </text>
+      <text x='-40' y='0'> {data.fields? data.fields.title: data.title} </text>
     )
   }
-  /*
-   * Render
-   */
 
    onEditCardContents = (editedFields) => {
      this.setState(prevState => ({
@@ -352,10 +402,16 @@ export default class Graph extends React.Component {
          fields: {
            ...prevState.selected.fields,
            ...editedFields
-         }
+         },
        }
      }), () => {
-       this.onUpdateNode(this.state.selected)
+       // TODO: BUG:PROBLEM in onUpdateNode. made it deselect as soon as card content edited.
+       if (this.state.selected.objectType === 'node') {
+         this.onUpdateNode({ ...this.state.selected, title: this.state.selected.fields.title });
+       } else {
+         // we create this because we are editing the card contents of the edge.
+         this.onUpdateEdge({ ...this.state.selected, handleText: this.state.selected.fields.title }) 
+       }
      })
    }
   onAddNewProject = () => {
@@ -367,6 +423,7 @@ export default class Graph extends React.Component {
     console.log("CREATING NEW PRJ", newProjectId, this.state.newProjectName)
     this.setState(prevState => ({
       newProjectName: '',
+      selected: null, 
       projects: {
         ...prevState.projects,
         [newProjectId]: {
@@ -398,6 +455,12 @@ export default class Graph extends React.Component {
     }, () => {
       this.saveLocalStorage();
     })
+  }
+  onCancelAddObject = () => {
+    this.setState({
+      formModalIsOpen: false,
+      candidateNewObject: null,
+    });
   }
 
   render() {
@@ -435,10 +498,10 @@ export default class Graph extends React.Component {
               <p>Once deleted, it is forever lost...</p>
             </Modal>
             <ExpandableFormModal
-              title="Add a new node"
-              isOpen={this.state.nodeModalIsOpen}
-              onSubmit={this.onSubmitCreateNode}
-              onCancel={() => this.setState({nodeModalIsOpen: false})}
+            title={`Add a new ${(this.state.candidateNewObject || {}).objectType}`}
+              isOpen={this.state.formModalIsOpen}
+              onSubmit={this.onSubmitCreateObject}
+              onCancel={this.onCancelAddObject}
             />
           </>
         )}
@@ -459,7 +522,6 @@ export default class Graph extends React.Component {
         </>
       )
     } else {
-    // TODO: should probably fix this. Bug when deleting the first project.
       const { nodes, edges } = (this.state.projects[this.state.currentProjectId] || { graph: { nodes: [], edges: [] }}).graph;
       const selected = this.state.selected;
       const { NodeTypes, NodeSubtypes, EdgeTypes } = GraphConfig;
@@ -468,7 +530,7 @@ export default class Graph extends React.Component {
           {modals}
           <div style={{ marginBottom: '0.5em', display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
             <Select
-              style={{ paddingLeft: '1em', width: '10%' }}
+              style={{ paddingLeft: '1em', width: '15%' }}
               value={this.state.currentProjectId}
               onChange={(projectId) => this.setState({ currentProjectId: projectId, selected: null })}
               dropdownRender={menu => (
@@ -490,41 +552,41 @@ export default class Graph extends React.Component {
             <DeleteOutlined style={{ paddingRight: '1em', fontSize: '1.6em' }} onClick={() => this.setState({ deleteProjectModalIsOpen: true })}/>
           </div>
           <div style={{ display: 'flex', flexDirection: 'row'}}>
-            <div id="graph" style={{ width: '80%', height: /*'calc(100% - 87px)'*/ '37rem'}}>
-              <GraphView
-                ref={el => (this.GraphView = el)}
-                nodeKey={NODE_KEY}
-                nodes={nodes}
-                edges={edges}
-                selected={selected}
-                nodeTypes={NodeTypes}
-                nodeSubtypes={NodeSubtypes}
-                edgeTypes={EdgeTypes}
-                onSelectNode={this.onSelectNode}
-                onCreateNode={this.onCreateNode}
-                onUpdateNode={this.onUpdateNode}
-                onDeleteNode={this.onDeleteNode}
-                disableBackspace={true} 
-                onSelectEdge={this.onSelectEdge}
-                onCreateEdge={this.onCreateEdge}
-                onSwapEdge={this.onSwapEdge}
-                onDeleteEdge={this.onDeleteEdge}
-                onUndo={this.onUndo}
-                onCopySelected={this.onCopySelected}
-                onPasteSelected={this.onPasteSelected}
-                layoutEngineType={this.state.layoutEngineType}
-                edgeHandleSize={50}
-                renderNodeText={this.renderNodeText}
-                nodeSize={1000}
-              />
+            <div id="graph" style={{ width: '80%', height: '37rem' }}>
+                <GraphView
+                  ref={el => (this.GraphView = el)}
+                  nodeKey={NODE_KEY}
+                  nodes={nodes}
+                  edges={edges}
+                  selected={selected}
+                  nodeTypes={NodeTypes}
+                  nodeSubtypes={NodeSubtypes}
+                  edgeTypes={EdgeTypes}
+                  onSelectNode={this.onSelectNode}
+                  onCreateNode={this.onCreateNode}
+                  onUpdateNode={this.onUpdateNode}
+                  onDeleteNode={this.onDeleteNode}
+                  onSelectEdge={this.onSelectEdge}
+                  onCreateEdge={this.onCreateEdge}
+                  disableBackspace
+                  onSwapEdge={this.onSwapEdge}
+                  onDeleteEdge={this.onDeleteEdge}
+                  onUndo={this.onUndo}
+                  onCopySelected={this.onCopySelected}
+                  onPasteSelected={this.onPasteSelected}
+                  layoutEngineType={this.state.layoutEngineType}
+                  edgeHandleSize={50}
+                  renderNodeText={this.renderNodeText}
+                  nodeSize={1000}
+                />
             </div>
             <div style={{ width: '40%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div>
                 <Title level={4} style={{ textAlign: 'center' }}> Controls: </Title>
                 <ul>
                   <li> Create node: hold <code>shift</code> and left click at the location of your new node.</li>
-                  <li> Create edge: hold <code>shift</code> and drag from the originating node to the destination node to create an edge</li>
-                  <li> Deleting edge or node: simply press <code>delete</code> </li>
+                  <li> Create edge: hold <code>shift</code> and drag from the originating node to the destination node to create an edge.</li>
+                  <li> Deleting edge or node: Click trash icon on card. </li>
                 </ul>
               </div>
               <Divider/>
@@ -532,9 +594,10 @@ export default class Graph extends React.Component {
               <div style={{ width: '80%' }}>
                 { selected && (
                   <EditableInfoCard
-                    title={'Selected Node'}
+                    title={`Selected ${selected.objectType}`}
                     contents={selected.fields}
                     onEditContents={this.onEditCardContents}
+                    onDeleteCard={() => this.onDeleteObject(selected)}
                   />
                 )}
               </div>

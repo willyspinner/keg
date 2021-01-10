@@ -1,6 +1,11 @@
-# kg viz
+<img width="1129" alt="Screen Shot 2021-01-09 at 5 32 18 PM" src="https://user-images.githubusercontent.com/17305586/104112202-b59ad400-52a0-11eb-9c11-b6917ecc1179.png">
 
-cool stuff ay
+# Welcome
+Welcome to the Keg project. This is a web app currently localhosted that allows you to create an associative mind map of connections in your learning. 
+
+Some use cases that this tool can help you with:
+- Creating a mind map for essay plans, using the graphs and edges to imply causality between events
+- Creating a knowledge graph for research paper's your reading about in a particular field, where the node can be a concept / method / model, and the edges are the relationships between the papers (e.g. citing, supersedence, inspiration, etc.)
 
 
 # Tasks

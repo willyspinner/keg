@@ -11,15 +11,15 @@ Some use cases that this tool can help you with:
 # Tasks
 
 ## On the roadmap
-- setting up a basic backend server (with user accounts)
-- sharing & collaboration using OT (Operational Transformation) and websockets (this is very ambitious)!
+- Fork `react-digraph` to create a version where you can delete nodes and edges using shift+delete.
 
 ## Sprint backlog
 
 ### TODO
+- create edge/node explorer (shows cards of adjacent nodes by edge predicate) - when clicked on, you can explore in graph.
 
 ### Doing
-- create edge/node explorer (shows cards of adjacent nodes by edge predicate) - when clicked on, you can explore in graph.
+- Make mindmap of QA systems and make this the default sample project
 
 
 ### Done

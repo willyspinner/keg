@@ -12,7 +12,7 @@ Some use cases that this tool can help you with:
 
 ## On the roadmap
 - Fork `react-digraph` to create a version where you can delete nodes and edges using shift+delete.
-
+- Add pdf reader to view papers 
 ## Sprint backlog
 
 ### TODO
